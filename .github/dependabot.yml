@@ -1,0 +1,41 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      # Batch the routine dev-tooling minor/patch bumps into one PR to cut noise.
+      dev-tooling:
+        patterns:
+          - "@types/*"
+          - "vitest"
+          - "prettier"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Take these majors deliberately, not via auto-PR.
+      # typescript: tsconfig is module=commonjs + moduleResolution=node, so TS6
+      #   (drops node10) fails `tsc --noEmit` and dirties the ncc-built dist/.
+      # @types/node: must track, not lead, the CI Node runtime.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    ignore:
+      # Skip MAJOR github-actions bumps — they churn + break
+      # (actions/checkout@v7 broke docs CI). Take majors deliberately + tested;
+      # minor/patch (incl. security) still auto-PR.
+      # FIX 2026-06-22: this ignore was previously at column 0 (a top-level key) and
+      # therefore INERT — github-actions majors were NOT actually ignored here.
+      # Re-nested under this update entry so the policy applies.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

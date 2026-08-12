@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      # Full semver only. This workflow force-moves the floating `v1` major tag;
+      # triggering on a bare `v*` made the `v1` push re-run the workflow and race
+      # its own `git push v1 --force` (cannot lock ref). `v*.*.*` excludes `v1`.
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Test + build
+        run: |
+          npm test
+          npm run build
+
+      - name: Update major-version tag
+        # When releasing v1.2.3, also update the v1 tag so users can pin
+        # to "@v1" and get patches automatically. Standard pattern for
+        # GitHub Marketplace actions (see actions/checkout, actions/setup-node).
+        run: |
+          MAJOR=$(echo "${GITHUB_REF_NAME}" | cut -d. -f1)
+          git config user.name "decimalai-bot"
+          git config user.email "noreply@decimal.ai"
+          git tag -fa "${MAJOR}" -m "Update ${MAJOR} tag to ${GITHUB_REF_NAME}"
+          git push origin "${MAJOR}" --force
+
+      - name: Create GitHub release
+        # SHA-pinned, not @v2: this job holds contents: write and the step above
+        # force-moves the `v1` tag that every consumer of this Action pins to. If
+        # the mutable `v2` tag were ever moved to hostile code, that code would
+        # inherit both — and could retag `v1` for every downstream user.
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          generate_release_notes: true
+          draft: false

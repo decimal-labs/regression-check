@@ -1,0 +1,42 @@
+{
+  "name": "@decimalai/regression-check-action",
+  "version": "1.1.0",
+  "private": true,
+  "description": "GitHub Action: catch agent regressions before they ship via manifest-driven impact analysis.",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "ncc build src/index.ts -o dist --source-map --license licenses.txt",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "format": "prettier --write src tests"
+  },
+  "keywords": [
+    "github-action",
+    "ai",
+    "agents",
+    "regression",
+    "manifest",
+    "decimalai"
+  ],
+  "license": "MIT",
+  "author": "DecimalAI",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/decimal-labs/regression-check.git"
+  },
+  "dependencies": {
+    "@actions/core": "^1.11.1",
+    "@actions/github": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.3",
+    "@vercel/ncc": "^0.38.1",
+    "prettier": "^3.8.4",
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.9"
+  }
+}
