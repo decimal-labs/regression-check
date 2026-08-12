@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: TypeScript tests + build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Type check
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # dist/ is intentionally committed (GitHub Actions runtime consumes
+      # it directly). Fail if rebuild produces a diff.
+      - name: Verify dist/ is up to date
+        run: |
+          if [[ -n "$(git status --porcelain dist/)" ]]; then
+            echo "ERROR: dist/ is out of date. Run 'npm run build' and commit."
+            git diff dist/
+            exit 1
+          fi
+
+  dogfood:
+    name: Dogfood — exercise action against in-repo demo_agent
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # Install the released package from PyPI, not a git ref. This job is a
+      # dogfood run, so it should exercise the same SDK build users get from
+      # `pip install decimalai` — a git ref would test unreleased code and hide
+      # packaging breakage that only shows up in the published artifact.
+      - name: Install decimalai SDK
+        run: pip install decimalai
+
+      - name: Manifest extraction (manifest_only mode)
+        env:
+          DECIMALAI_MODE: manifest_only
+          DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
+          DECIMAL_BASE_URL: ${{ vars.DECIMAL_BASE_URL || 'https://api.decimal.ai' }}
+          DEMO_AGENT_NAME: decimalai-demo-agent
+        # Only run when the secret is configured. The `if` block reads from
+        # `env` rather than `secrets` because GitHub doesn't allow direct
+        # `secrets.X` in `if` expressions.
+        if: ${{ env.DECIMAL_API_KEY != '' }}
+        run: python scripts/init_for_decimal.py
+
+      - name: Skip notice when no API key
+        env:
+          DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
+        if: ${{ env.DECIMAL_API_KEY == '' }}
+        run: echo "DECIMAL_API_KEY not set — skipping dogfood manifest upload"

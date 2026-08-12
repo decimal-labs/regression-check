@@ -1,0 +1,100 @@
+name: 'Decimal Manifest Impact'
+description: 'Catch agent regressions before they ship — manifest-driven impact analysis on every PR. No eval cases required.'
+author: 'DecimalAI'
+
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+
+inputs:
+  api-key:
+    description: 'DecimalAI API key. Pull from GitHub Secrets.'
+    required: true
+  agent-name:
+    description: 'Agent name (matches the value passed to decimalai.init()).'
+    required: true
+  candidate-manifest-id:
+    description: |
+      Candidate manifest ID. If omitted, the action reads it from
+      $GITHUB_OUTPUT (decimal_manifest_id key, written by
+      decimalai.flush_manifest_for_ci) or ./decimal_manifest_id.txt.
+    required: false
+    default: ''
+  github-token:
+    description: |
+      Token used to post / update the PR impact comment. Defaults to the
+      automatic per-job GITHUB_TOKEN (github.token), so the comment works
+      out of the box as long as the workflow grants `pull-requests: write`.
+      Override only if you need a different token (e.g. a PAT to comment on
+      forked PRs). For backward-compatibility, if this is empty the Action
+      also falls back to the GITHUB_TOKEN / GH_TOKEN environment variables.
+    required: false
+    default: '${{ github.token }}'
+  base-url:
+    description: 'DecimalAI API base URL. Defaults to production.'
+    required: false
+    default: 'https://api.decimal.ai'
+  fail-on:
+    description: |
+      When to fail the workflow: "high" (any HIGH RISK), "medium" (any MEDIUM+),
+      or "none" (warn only). The `unverified` verdict — a manifest change with
+      no production traces in the window to measure it against — is ranked by
+      the severity of the manifest diff, so `fail-on: high` fails a PR that
+      deletes a tool even when there is no traffic to score it.
+    required: false
+    default: 'high'
+  on-error:
+    description: |
+      What to do when the check could not RUN: a DecimalAI outage or 5xx, a
+      network error, a timeout, or the plan's monthly regression-check quota
+      (HTTP 429). "warn" (default) posts a "check did not run" PR comment and
+      exits 0 — our availability is not a regression in your code. "fail" reds
+      the job instead.
+      Misconfiguration is always fatal under both settings: 401/403 (bad API
+      key) and 400/404 (unknown agent or candidate manifest) must stay loud, or
+      the gate would silently do nothing forever.
+    required: false
+    default: 'warn'
+  comment-mode:
+    description: 'PR comment behavior: "update" (single comment, updated per push) or "new" (post fresh per push).'
+    required: false
+    default: 'update'
+  trace-window-days:
+    description: 'How far back to look for affected traces.'
+    required: false
+    default: '30'
+  behavioral-check:
+    description: |
+      Behavioral verification for model changes (preview). The structural check
+      can only say a model swap "may differ"; this re-issues a representative
+      recorded model call per affected trace against the candidate model and
+      diffs the outputs. One of: "off" (default), "mock" (free — counts how many
+      calls are eligible but does NOT verify outputs), or "real" (live
+      same-provider calls + LLM judge — spends tokens).
+      Only runs when the manifest diff contains a model change.
+    required: false
+    default: 'off'
+
+outputs:
+  verdict:
+    description: |
+      Final verdict: high_risk, medium_risk, low_risk, no_change, unverified,
+      first_run — or `unavailable` when the check could not run and `on-error`
+      is `warn`.
+      `unverified` means the manifest changed and there were NO production
+      traces in the window to measure the change against. It is not a pass:
+      nothing was checked.
+  high-risk-count:
+    description: 'Number of HIGH RISK traces in the impact report.'
+  medium-risk-count:
+    description: 'Number of MEDIUM RISK traces.'
+  low-risk-count:
+    description: 'Number of LOW RISK traces.'
+  regression-check-id:
+    description: 'ID of the persisted regression check (for deep-link).'
+  report-url:
+    description: 'URL to the full report on the DecimalAI dashboard.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
