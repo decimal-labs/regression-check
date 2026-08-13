@@ -11,7 +11,7 @@ shapes what counts as a security problem here, so this policy is more specific t
 Two ways to reach us, either is fine:
 
 - **GitHub private vulnerability reporting** — **Security → Report a vulnerability** on this
-  repository. That opens a private advisory only maintainers can see.
+  repository. That keeps the report visible only to the maintainers.
 - **Email** — [hello@decimal.ai](mailto:hello@decimal.ai). A PGP key is available on request if you
   would rather not send details in cleartext.
 
@@ -71,9 +71,10 @@ actually do:
 - We tell you whether we consider it in scope and what we intend to do.
 - We follow coordinated disclosure. We agree a timeline with you rather than impose one, and we will
   not ask you to stay quiet indefinitely. Because callers pin a major tag (`@v1`), a fix means both a
-  patch release and a moved tag, and we will tell you when both have happened.
-- We are happy to credit you in the advisory and the release notes. Tell us how you would like to be
-  named, or say that you would rather not be.
+  patch release and a moved tag, and we will tell you when both have happened. We do not run a formal
+  advisory process — the release notes are where a fix gets described.
+- We are happy to credit you in those release notes. Tell us how you would like to be named, or say
+  that you would rather not be.
 
 There is no paid bug bounty. That is a resourcing decision, not a judgment about the value of your
 work.

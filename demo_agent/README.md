@@ -30,7 +30,7 @@ agent repo as shown in the top-level [`README.md`](../README.md) quick start.
 | `langchain_agent.py` | **LangChain-introspection variant** — real `langchain-core` objects (`StructuredTool`, `ChatPromptTemplate`). The path for customers using LangChain. |
 | `__init__.py` | Re-exports `build_agent` from `agent.py`. |
 | `../scripts/init_for_decimal.py` | CI entry point for the explicit-args variant. Calls `flush_manifest_for_ci(tools=..., prompts=..., models=...)`. |
-| `../scripts/init_for_decimal_langchain.py` | CI entry point for the LangChain variant. Calls `flush_manifest_for_ci(chain=...)` and lets the SDK introspect the chain. |
+| `../scripts/init_for_decimal_langchain.py` | Manual entry point for the LangChain variant. Calls `flush_manifest_for_ci(chain=...)` and lets the SDK introspect the chain. |
 | `../action.yml` + `../dist/index.js` | The Action itself — this repo root **is** the Action (`uses: decimal-labs/regression-check@v1`). |
 | `../.github/workflows/ci.yml` | Repo CI — builds + tests the Action, then runs the `dogfood` manifest-extraction step against this demo agent. |
 
@@ -53,7 +53,7 @@ Are you using LangChain (or a LangChain-shaped agent) in production?
               │
               ├─ YES ──►  Those frameworks have their own install() integrations
               │           that auto-extract manifests at runtime. This demo
-              │           covers the two paths we dogfood here; framework-
+              │           covers the two paths shown here; framework-
               │           specific setup lives in the customer docs at
               │           docs.decimal.ai.
               │
@@ -67,7 +67,8 @@ Are you using LangChain (or a LangChain-shaped agent) in production?
 ```
 
 **Summary:** introspection if you're on LangChain, explicit-args otherwise.
-Both are exercised on every PR so neither rots.
+The explicit-args path is exercised on every PR (the `dogfood` job in
+`ci.yml`); the LangChain variant is run manually.
 
 ## What "intentional changes" look like
 

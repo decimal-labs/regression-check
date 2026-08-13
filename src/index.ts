@@ -53,13 +53,11 @@ const FAIL_ON_RANK: Record<FailOn, number> = {
  * `unverified` is ranked by the severity of the manifest DIFF, not by an
  * affected-trace count it does not have.
  *
- * Pre-fix, a PR that deleted a tool on an agent with no traffic in the window
- * scored 0/0/0 affected traces, came back `no_change`, and exited 0 under
- * every `fail-on` setting. Giving `unverified` a fixed rank would just move
- * the problem: too low and a deleted tool still merges green; too high and a
- * one-line prompt tweak with no traffic reds the job. Inheriting the diff's
- * severity means the gate reacts to what actually changed, and
- * `fail-on: high` (the default) still fails on the tool deletion.
+ * Giving `unverified` a fixed rank would just move the problem: too low and a
+ * deleted tool still merges green; too high and a one-line prompt tweak with
+ * no traffic reds the job. Inheriting the diff's severity means the gate
+ * reacts to what actually changed, and `fail-on: high` (the default) still
+ * fails on the tool deletion.
  *
  * When `structuralSeverity` is absent — a backend old enough not to send it,
  * which cannot mint `unverified` anyway — fall back to low: warn, never
@@ -123,12 +121,11 @@ async function main(): Promise<void> {
     });
   } catch (e) {
     const reason = (e as Error).message;
-    // This catch used to be an unconditional `core.setFailed`, sitting BEFORE
-    // shouldFail() — so a DecimalAI 5xx, a network blip, or the routine
-    // Free-tier "50 regression checks/month" 429 reded every open PR in the
-    // customer's repo, and `fail-on: none` did not make the check advisory
-    // despite the docs saying it does. Availability problems on our side are
-    // not regressions in their code.
+    // A transient failure to RUN the check — a 5xx, a network blip, a
+    // rate-limit 429 — is not a regression in the caller's code. Under
+    // `on-error: warn` it must leave the job green and report `unavailable`;
+    // only a verdict the server actually returned may reach shouldFail(), so
+    // `fail-on: none` stays advisory.
     if (isTransientApiFailure(e) && inputs.onError === 'warn') {
       core.warning(`Impact check unavailable — ${reason}`);
       // Outputs still get set so downstream steps branch on a real value

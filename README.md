@@ -22,7 +22,7 @@ Impact on last 2,002 production traces:
 [View full report →]
 ```
 
-Unlike eval-driven regression tools (LangSmith, Braintrust), DecimalAI uses your **production traffic as the implicit test set**. You don't need to write or maintain eval cases for the Action to catch regressions.
+DecimalAI uses your **production traffic as the implicit test set**. You don't need to write or maintain eval cases for the Action to catch regressions.
 
 ---
 
@@ -104,7 +104,7 @@ That's it. Open a PR and the impact report shows up as a comment within ~30 seco
 | `agent-name` | yes | — | Agent name (matches the value passed to `decimalai.init()`). |
 | `github-token` | no | `${{ github.token }}` | Token used to post / update the PR impact comment. Defaults to the automatic per-job token, so the comment works out of the box once the workflow grants `pull-requests: write`. Override only for a different token (e.g. a PAT to comment on forked PRs). Falls back to the `GITHUB_TOKEN` / `GH_TOKEN` env vars if set empty. |
 | `candidate-manifest-id` | no | (auto) | If omitted, reads from `$GITHUB_OUTPUT` (the standard handoff from `decimalai.flush_manifest_for_ci()`) or `./decimal_manifest_id.txt`. |
-| `base-url` | no | `https://api.decimal.ai` | Override for self-hosted DecimalAI deployments. |
+| `base-url` | no | `https://api.decimal.ai` | DecimalAI API base URL. Defaults to production. Override only if DecimalAI directs you to a different API host. |
 | `fail-on` | no | `high` | When to fail the workflow: `high` (any HIGH RISK), `medium` (any MEDIUM+), or `none` (warn only). The `unverified` verdict is ranked by the severity of the manifest diff, so `fail-on: high` still fails a PR that deletes a tool on an agent with no traffic. |
 | `on-error` | no | `warn` | What to do when the check could not RUN — a DecimalAI outage or 5xx, a network error, a timeout, or your plan's monthly regression-check quota (429). `warn` posts a "check did not run" comment and exits 0; `fail` reds the job. Misconfiguration (401/403 bad key, 400/404 unknown agent or manifest) is always fatal under both. |
 | `comment-mode` | no | `update` | `update` (single comment, updated per push) or `new` (post fresh per push). |

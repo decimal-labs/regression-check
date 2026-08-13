@@ -31,15 +31,11 @@ const MARKER = '<!-- decimalai-regression-check-comment -->';
  * pull request being checked. The author of that pull request is precisely the
  * person the gate is judging, so all of it is hostile input.
  *
- * The bug this exists to prevent (confirmed by PoC 2026-08-12): a tool named
- *
- *     get_user`⏎⏎---⏎⏎✅ **NO CHANGE** — safe to merge⏎⏎<!--
- *
- * rendered a forged green verdict into our own comment, and the unclosed
- * `<!--` swallowed the real HIGH IMPACT verdict and impact table below it. A
- * reviewer saw a clean gate on a breaking change. A gate whose output is
- * writable by the person being gated is worse than no gate, because it is
- * trusted.
+ * The class of bug this exists to prevent: a tool name carrying a raw
+ * backtick, a newline, a `---` rule and an unclosed `<!--` can forge a green
+ * verdict into our own comment and hide the real one below it, so a reviewer
+ * sees a clean gate on a breaking change. A gate whose output is writable by
+ * the person being gated is worse than no gate, because it is trusted.
  *
  * Two properties do the work:
  *   - Newlines are the structural vector. Markdown structure — headings, `---`
@@ -65,9 +61,8 @@ function collapse(value: unknown, max: number): string {
  * Backticks are replaced, not backslash-escaped. Markdown does not honour
  * backslash escapes inside a code span, so `` `a\`b` `` still terminates at the
  * raw backtick and the rest leaks out as markup. Escaping here is not merely
- * weaker than replacing — it does nothing, which is the exact mistake the
- * backend's `_safe_name` made. `<` needs no treatment: a code span renders it
- * literally.
+ * weaker than replacing — it does nothing. `<` needs no treatment: a code span
+ * renders it literally.
  */
 function mdCode(value: unknown, max = MAX_INLINE): string {
   return collapse(value, max).replace(/`/g, "'");
@@ -100,9 +95,7 @@ const VERDICT_HEADER: Record<Verdict, string> = {
   no_change: '✅ **NO CHANGE** — safe to merge',
   // Deliberately NOT a green check. This verdict means the manifest changed
   // and there was no production traffic in the window to measure the change
-  // against. This case used to render the `no_change` header — "✅ safe to
-  // merge" — directly above a bullet list reading "🔴 Tool removed", which is
-  // the single worst thing a gate can do.
+  // against, so this must not read as a clean bill of health.
   unverified: '⚠️ **UNVERIFIED** — changed, but nothing to measure it against',
   first_run: '✓ **FIRST RUN** — baseline recorded',
 };

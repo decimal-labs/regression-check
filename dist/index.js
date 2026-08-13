@@ -30167,15 +30167,11 @@ const MARKER = '<!-- decimalai-regression-check-comment -->';
  * pull request being checked. The author of that pull request is precisely the
  * person the gate is judging, so all of it is hostile input.
  *
- * The bug this exists to prevent (confirmed by PoC 2026-08-12): a tool named
- *
- *     get_user`⏎⏎---⏎⏎✅ **NO CHANGE** — safe to merge⏎⏎<!--
- *
- * rendered a forged green verdict into our own comment, and the unclosed
- * `<!--` swallowed the real HIGH IMPACT verdict and impact table below it. A
- * reviewer saw a clean gate on a breaking change. A gate whose output is
- * writable by the person being gated is worse than no gate, because it is
- * trusted.
+ * The class of bug this exists to prevent: a tool name carrying a raw
+ * backtick, a newline, a `---` rule and an unclosed `<!--` can forge a green
+ * verdict into our own comment and hide the real one below it, so a reviewer
+ * sees a clean gate on a breaking change. A gate whose output is writable by
+ * the person being gated is worse than no gate, because it is trusted.
  *
  * Two properties do the work:
  *   - Newlines are the structural vector. Markdown structure — headings, `---`
@@ -30199,9 +30195,8 @@ function collapse(value, max) {
  * Backticks are replaced, not backslash-escaped. Markdown does not honour
  * backslash escapes inside a code span, so `` `a\`b` `` still terminates at the
  * raw backtick and the rest leaks out as markup. Escaping here is not merely
- * weaker than replacing — it does nothing, which is the exact mistake the
- * backend's `_safe_name` made. `<` needs no treatment: a code span renders it
- * literally.
+ * weaker than replacing — it does nothing. `<` needs no treatment: a code span
+ * renders it literally.
  */
 function mdCode(value, max = MAX_INLINE) {
     return collapse(value, max).replace(/`/g, "'");
@@ -30230,9 +30225,7 @@ const VERDICT_HEADER = {
     no_change: '✅ **NO CHANGE** — safe to merge',
     // Deliberately NOT a green check. This verdict means the manifest changed
     // and there was no production traffic in the window to measure the change
-    // against. This case used to render the `no_change` header — "✅ safe to
-    // merge" — directly above a bullet list reading "🔴 Tool removed", which is
-    // the single worst thing a gate can do.
+    // against, so this must not read as a clean bill of health.
     unverified: '⚠️ **UNVERIFIED** — changed, but nothing to measure it against',
     first_run: '✓ **FIRST RUN** — baseline recorded',
 };
@@ -30823,13 +30816,11 @@ const FAIL_ON_RANK = {
  * `unverified` is ranked by the severity of the manifest DIFF, not by an
  * affected-trace count it does not have.
  *
- * Pre-fix, a PR that deleted a tool on an agent with no traffic in the window
- * scored 0/0/0 affected traces, came back `no_change`, and exited 0 under
- * every `fail-on` setting. Giving `unverified` a fixed rank would just move
- * the problem: too low and a deleted tool still merges green; too high and a
- * one-line prompt tweak with no traffic reds the job. Inheriting the diff's
- * severity means the gate reacts to what actually changed, and
- * `fail-on: high` (the default) still fails on the tool deletion.
+ * Giving `unverified` a fixed rank would just move the problem: too low and a
+ * deleted tool still merges green; too high and a one-line prompt tweak with
+ * no traffic reds the job. Inheriting the diff's severity means the gate
+ * reacts to what actually changed, and `fail-on: high` (the default) still
+ * fails on the tool deletion.
  *
  * When `structuralSeverity` is absent — a backend old enough not to send it,
  * which cannot mint `unverified` anyway — fall back to low: warn, never
@@ -30886,12 +30877,11 @@ async function main() {
     }
     catch (e) {
         const reason = e.message;
-        // This catch used to be an unconditional `core.setFailed`, sitting BEFORE
-        // shouldFail() — so a DecimalAI 5xx, a network blip, or the routine
-        // Free-tier "50 regression checks/month" 429 reded every open PR in the
-        // customer's repo, and `fail-on: none` did not make the check advisory
-        // despite the docs saying it does. Availability problems on our side are
-        // not regressions in their code.
+        // A transient failure to RUN the check — a 5xx, a network blip, a
+        // rate-limit 429 — is not a regression in the caller's code. Under
+        // `on-error: warn` it must leave the job green and report `unavailable`;
+        // only a verdict the server actually returned may reach shouldFail(), so
+        // `fail-on: none` stays advisory.
         if ((0, api_1.isTransientApiFailure)(e) && inputs.onError === 'warn') {
             core.warning(`Impact check unavailable — ${reason}`);
             // Outputs still get set so downstream steps branch on a real value
@@ -31096,10 +31086,11 @@ function parseInputs() {
     if (!BEHAVIORAL_CHECK_VALUES.includes(behavioralRaw)) {
         throw new Error(`Invalid behavioral-check value '${behavioralRaw}'. Must be one of: ${BEHAVIORAL_CHECK_VALUES.join(', ')}`);
     }
-    // Defaults to `warn` — a DecimalAI outage or a monthly-quota 429 must not
-    // red every open PR in the customer's repo. `fail` restores the older
-    // always-blocking behaviour for teams that want the check to gate merges
-    // even when it could not run.
+    // Defaults to `warn` — a failure to REACH the check (5xx, network error,
+    // timeout, monthly-quota 429) is not a regression in the caller's code, so
+    // it must not red every open PR in their repo. `fail` opts back in to
+    // blocking behaviour for teams that want the check to gate merges even when
+    // it could not run.
     const onErrorRaw = (core.getInput('on-error') || 'warn').toLowerCase();
     if (!ON_ERROR_VALUES.includes(onErrorRaw)) {
         throw new Error(`Invalid on-error value '${onErrorRaw}'. Must be one of: ${ON_ERROR_VALUES.join(', ')}`);

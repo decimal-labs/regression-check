@@ -1,19 +1,19 @@
 /**
  * The CI gate must not return a false green — and must not go red for the
- * wrong reason. Two failure modes, both of which have shipped before:
+ * wrong reason. Two invariants this suite locks down:
  *
  *  1. `unverified` — a manifest change with no production traces in the window
  *     to measure it against — must not exit 0 the way `no_change` does, and
  *     must not render "✅ safe to merge" above a "🔴 Tool removed" bullet.
  *  2. A failure to RUN the check (quota 429, backend 5xx, network error,
  *     timeout) must not red the customer's job under the default
- *     `on-error: warn`. The path used to be an unconditional `core.setFailed`
- *     that ran BEFORE `shouldFail`, so `fail-on: none` did not make the check
- *     advisory either.
+ *     `on-error: warn`. A transient failure must be classified BEFORE
+ *     `shouldFail` runs, so that `on-error: warn` and `fail-on: none` both
+ *     keep the check advisory.
  *
  * The tests for (2) drive `main()` end-to-end rather than the pure classifier,
- * because the defect is in the WIRING: `isTransientApiFailure` on its own
- * would pass even with the catch block reverted.
+ * because the invariant lives in the WIRING: `isTransientApiFailure` passing
+ * on its own does not prove the error path consults it.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -97,8 +97,8 @@ function makeUnverifiedReport(
 
 describe('shouldFail on the unverified verdict', () => {
   it('fails at the DEFAULT fail-on when the diff has a high-severity change', async () => {
-    // The exact reproduced case: a PR deleting a tool on an agent with no
-    // traffic. Pre-fix this was `no_change`, rank 0, exit 0 at every threshold.
+    // A PR that deletes a tool on an agent with no traffic: `unverified` must
+    // inherit the diff severity, not be treated as `no_change`.
     const { shouldFail } = await import('../src/index');
     expect(shouldFail('unverified', 'high', 'high')).toBe(true);
     expect(shouldFail('unverified', 'medium', 'high')).toBe(true);
@@ -156,7 +156,7 @@ describe('the unverified PR comment', () => {
 
   it('suppresses the eval verdict, which reads ✅ CLEAN on zero traces', () => {
     // Rendering "✅ CLEAN — no passing-eval traffic affected" under an
-    // UNVERIFIED header re-creates the self-contradiction being fixed.
+    // UNVERIFIED header would contradict the header itself.
     expect(md()).not.toContain('**CLEAN**');
   });
 
@@ -242,7 +242,7 @@ describe('runRegressionCheck error shape', () => {
     expect(err.status).toBe(429);
     expect(err.message).toContain('Monthly quota reached');
     expect(err.message).toContain('https://app.decimal.ai/settings/billing');
-    // The raw JSON dump was the pre-fix message.
+    // Never dump the raw JSON error body into the comment.
     expect(err.message).not.toContain('limit_exceeded');
   });
 });

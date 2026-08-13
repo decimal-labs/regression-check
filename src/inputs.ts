@@ -12,7 +12,7 @@ export type BehavioralCheck = 'off' | 'mock' | 'real';
 /**
  * What to do when the check could not RUN — quota 429, backend 5xx, network
  * error, timeout. `warn` posts a degraded PR comment and exits 0; `fail` reds
- * the job (the older always-blocking behaviour, now opt-in).
+ * the job (opt-in blocking).
  * Misconfiguration (401/403/400/404) is always fatal under both — see
  * isTransientApiFailure in api.ts.
  */
@@ -113,10 +113,11 @@ export function parseInputs(): ActionInputs {
     );
   }
 
-  // Defaults to `warn` — a DecimalAI outage or a monthly-quota 429 must not
-  // red every open PR in the customer's repo. `fail` restores the older
-  // always-blocking behaviour for teams that want the check to gate merges
-  // even when it could not run.
+  // Defaults to `warn` — a failure to REACH the check (5xx, network error,
+  // timeout, monthly-quota 429) is not a regression in the caller's code, so
+  // it must not red every open PR in their repo. `fail` opts back in to
+  // blocking behaviour for teams that want the check to gate merges even when
+  // it could not run.
   const onErrorRaw = (core.getInput('on-error') || 'warn').toLowerCase();
   if (!ON_ERROR_VALUES.includes(onErrorRaw as OnError)) {
     throw new Error(

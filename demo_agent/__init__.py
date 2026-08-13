@@ -1,7 +1,7 @@
 """Demo agent for DecimalAI dogfooding.
 
-Used by `.github/workflows/decimal.yml` to exercise the regression-check
-flow on the DecimalAI monorepo itself.
+Used by the `dogfood` job in `.github/workflows/ci.yml` to exercise the
+manifest-extraction flow against this repo.
 
 This is NOT a production agent. It's a minimal manifest source that:
 - Has a stable shape (tools, prompts, models) we can intentionally evolve

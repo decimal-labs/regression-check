@@ -1,4 +1,4 @@
-"""CI entry point — LangChain introspection variant.
+"""Manifest-extraction entry point — LangChain introspection variant.
 
 Sibling of `scripts/init_for_decimal.py`. Where that script passes explicit
 `tools=[...], prompts={...}, models={...}` dicts to `flush_manifest_for_ci`,
@@ -14,8 +14,7 @@ Local smoke test (no GitHub needed):
     DECIMAL_BASE_URL=http://localhost:8000 \\
         python scripts/init_for_decimal_langchain.py
 
-Used for dogfooding: it exercises the LangChain introspection path against
-this repo's own CI on every push.
+Run manually (or wire into CI) to exercise the LangChain introspection path.
 """
 
 from __future__ import annotations
