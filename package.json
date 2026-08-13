@@ -4,7 +4,7 @@
   "private": true,
   "description": "GitHub Action: catch agent regressions before they ship via manifest-driven impact analysis.",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "main": "dist/index.js",
   "scripts": {
