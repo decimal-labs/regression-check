@@ -2,6 +2,12 @@
 
 **Catch agent regressions before they ship — no eval cases required.**
 
+[![Release](https://img.shields.io/github/v/release/decimal-labs/regression-check)](https://github.com/decimal-labs/regression-check/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/decimal-labs/regression-check/ci.yml?branch=main)](https://github.com/decimal-labs/regression-check/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/decimal-labs/regression-check/blob/main/LICENSE)
+
+> Part of [DecimalAI](https://decimal.ai) — most users want [decimal-labs/decimalai-python](https://github.com/decimal-labs/decimalai-python), the SDK this Action pairs with.
+
 When you open a PR with an agent change (renamed tool, rewritten prompt, swapped model), this Action computes the structural blast radius against your last 30 days of production traces and posts a per-PR impact report:
 
 ```
@@ -22,7 +28,19 @@ Impact on last 2,002 production traces:
 [View full report →]
 ```
 
+*Example report — the numbers above are illustrative (they come from the demo's seeded reference agent, not customer traffic). Run it yourself to get your own.*
+
+<!-- The ASCII mock above will be replaced by a real screenshot once captured:
+     https://raw.githubusercontent.com/decimal-labs/regression-check/main/docs/assets/pr-comment.png -->
+
+
 DecimalAI uses your **production traffic as the implicit test set**. You don't need to write or maintain eval cases for the Action to catch regressions.
+
+Want to see a report before wiring up CI? The demo runs the same check against a **seeded reference agent** — its numbers are illustrative, run it yourself:
+
+```bash
+pip install decimalai && decimalai demo regression   # ~2 min; needs a free API key (app.decimal.ai/settings)
+```
 
 ---
 
@@ -203,4 +221,8 @@ Run these yourself before opening a PR. CI runs the same four, and additionally 
 
 ## License
 
-MIT
+[MIT](https://github.com/decimal-labs/regression-check/blob/main/LICENSE)
+
+---
+
+**DecimalAI** · [Docs](https://docs.decimal.ai) · [Skills Registry](https://app.decimal.ai/skills) · [Python SDK](https://github.com/decimal-labs/decimalai-python) · [agentversion](https://github.com/decimal-labs/agentversion) · [skillevaluation](https://github.com/decimal-labs/skillevaluation) · [hello@decimal.ai](mailto:hello@decimal.ai)
