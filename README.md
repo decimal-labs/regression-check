@@ -10,28 +10,9 @@
 
 When you open a PR with an agent change (renamed tool, rewritten prompt, swapped model), this Action computes the structural blast radius against your last 30 days of production traces and posts a per-PR impact report:
 
-```
-🔍 Decimal Manifest Impact — support-agent
-
-Manifest changes:
-- 🔴 Tool removed — `compare_competitors`
-- 🟡 Prompt section rewritten
-
-Impact on last 2,002 production traces:
-| Severity | Traces |
-|---|---|
-| 🔴 HIGH RISK | 247 |
-| 🟡 MEDIUM RISK | 89 |
-| 🟢 LOW RISK | 1666 |
-
-🔴 HIGH RISK — review before merging
-[View full report →]
-```
+![The impact report the Action posts as a pull request comment](https://raw.githubusercontent.com/decimal-labs/regression-check/main/docs/assets/pr-comment.png)
 
 *Example report — the numbers above are illustrative (they come from the demo's seeded reference agent, not customer traffic). Run it yourself to get your own.*
-
-<!-- The ASCII mock above will be replaced by a real screenshot once captured:
-     https://raw.githubusercontent.com/decimal-labs/regression-check/main/docs/assets/pr-comment.png -->
 
 
 DecimalAI uses your **production traffic as the implicit test set**. You don't need to write or maintain eval cases for the Action to catch regressions.
