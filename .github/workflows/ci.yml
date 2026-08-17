@@ -83,3 +83,31 @@ jobs:
           DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
         if: ${{ env.DECIMAL_API_KEY == '' }}
         run: echo "DECIMAL_API_KEY not set — skipping dogfood manifest upload"
+
+  audit:
+    # Known-advisory check on the dependencies this Action ships to its users.
+    # It runs in other people's CI, so a vulnerable production dependency is
+    # their exposure and not only ours. --omit=dev because a dev-only advisory
+    # does not reach anyone running the Action.
+    #
+    # Advisory for now: as of 2026-08-17 this reports 3 production findings
+    # (undici HIGH, GHSA-g9mf-h72j-4rw9, plus two moderates), all reachable via
+    # @actions/github and all fixed only by a major bump to 9.x. That bump needs
+    # its own change with a dist/ rebuild, so gating on it today would just wedge
+    # the repo.
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
