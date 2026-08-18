@@ -63,6 +63,43 @@ jobs:
       # dogfood run, so it should exercise the same SDK build users get from
       # `pip install decimalai` — a git ref would test unreleased code and hide
       # packaging breakage that only shows up in the published artifact.
+      # The bundle in dist/ IS the artifact — it is what runs in every user's
+      # workflow — and nothing here executed it. The build job only checks that
+      # dist/ matches a fresh compile, which compares bytes and never asks
+      # whether they run. A bundle that resolves no modules would pass that and
+      # break for everyone on first use.
+      #
+      # These two assertions need no API key, so unlike the manifest step below
+      # they run on every push and on forks. Each pins a documented contract:
+      #   1. a missing required input is fatal and names the input;
+      #   2. an unreachable backend under `on-error: warn` exits 0 and reports
+      #      unavailable — our downtime is not the user's regression.
+      - name: Smoke the built action
+        run: |
+          set -euo pipefail
+
+          echo "--- missing required input must fail loudly"
+          if node dist/index.js > out1.txt 2>&1; then
+            echo "FAIL: expected a non-zero exit for a missing api-key"; cat out1.txt; exit 1
+          fi
+          grep -q '::error::.*api-key' out1.txt \
+            || { echo "FAIL: no ::error:: naming api-key"; cat out1.txt; exit 1; }
+          echo "ok"
+
+          echo "--- unreachable backend with on-error:warn must stay green"
+          env "INPUT_API-KEY=dai_sk_smoke_not_a_real_key" \
+              "INPUT_AGENT-NAME=smoke-agent" \
+              "INPUT_CANDIDATE-MANIFEST-ID=00000000-0000-4000-8000-000000000000" \
+              "INPUT_BASE-URL=http://127.0.0.1:9" \
+              "INPUT_ON-ERROR=warn" \
+              node dist/index.js > out2.txt 2>&1 \
+            || { echo "FAIL: on-error=warn must exit 0 when the backend is unreachable"; cat out2.txt; exit 1; }
+          grep -qi 'unavailable' out2.txt \
+            || { echo "FAIL: expected the run to report unavailable"; cat out2.txt; exit 1; }
+          echo "ok"
+
+          rm -f out1.txt out2.txt
+
       - name: Install decimalai SDK
         run: pip install decimalai
 
