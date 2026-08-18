@@ -134,7 +134,6 @@ jobs:
     # the repo.
     name: Dependency audit
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v6
 
