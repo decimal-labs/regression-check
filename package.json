@@ -1,6 +1,6 @@
 {
   "name": "@decimalai/regression-check-action",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "private": true,
   "description": "GitHub Action: catch agent regressions before they ship via manifest-driven impact analysis.",
   "engines": {

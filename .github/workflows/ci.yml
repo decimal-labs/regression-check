@@ -128,10 +128,17 @@ jobs:
     # does not reach anyone running the Action.
     #
     # Advisory for now: as of 2026-08-17 this reports 3 production findings
-    # (undici HIGH, GHSA-g9mf-h72j-4rw9, plus two moderates), all reachable via
+    # (undici GHSA-g9mf-h72j-4rw9, plus two more), all reachable via
     # @actions/github and all fixed only by a major bump to 9.x. That bump needs
     # its own change with a dist/ rebuild, so gating on it today would just wedge
     # the repo.
+    #
+    # GHSA-g9mf-h72j-4rw9 is MODERATE (CVSS 5.9), not high. This comment and
+    # de1e0b7's message both called it high; the advisory page says "Moderate
+    # severity" and the genuinely-high undici advisories in that range are
+    # WebSocket-only and unreachable from here. Calibrating a blocking gate
+    # against an inflated severity teaches the next reader the wrong threshold,
+    # which is the whole reason this comment exists.
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
