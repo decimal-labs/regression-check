@@ -8,6 +8,16 @@ on:
       # its own `git push v1 --force` (cannot lock ref). `v*.*.*` excludes `v1`.
       - 'v*.*.*'
 
+# Two tag pushes close together on 2026-08-16 raced: v1.1.1 went out first, then
+# v1.1.0's job finished second and last-writer-wins left `v1` and the "Latest"
+# flag pointing at the OLDER release, which is what the README badge reads. A
+# concurrency group alone would only serialize them — the same wrong writer still
+# wins, just later — so the ordering guard below is the half that actually fixes
+# it, and the group exists to stop two jobs racing the same `git push --force`.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -15,6 +25,32 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          # checkout defaults to fetch-tags: false, so `git tag -l` would see only
+          # the tag being released and the guard below could never find a higher one.
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Refuse to move a major tag backwards
+        # The mutation this protects is `git push origin v1 --force`, which every
+        # consumer pinning @v1 follows. Releasing an older tag after a newer one is
+        # always a mistake — a re-run, a late job, a backfilled tag — and it silently
+        # downgrades everyone. Compare against the highest existing full-semver tag
+        # in the same major and stop rather than regress.
+        run: |
+          set -euo pipefail
+          MAJOR="${GITHUB_REF_NAME%%.*}"
+          HIGHEST=$(git tag -l "${MAJOR}.*.*" \
+            | grep -E "^v[0-9]+\.[0-9]+\.[0-9]+$" \
+            | sort -V | tail -1)
+          echo "releasing ${GITHUB_REF_NAME}; highest existing in ${MAJOR}: ${HIGHEST:-<none>}"
+          if [ -n "${HIGHEST}" ] && [ "${HIGHEST}" != "${GITHUB_REF_NAME}" ]; then
+            NEWEST=$(printf '%s\n%s\n' "${HIGHEST}" "${GITHUB_REF_NAME}" | sort -V | tail -1)
+            if [ "${NEWEST}" != "${GITHUB_REF_NAME}" ]; then
+              echo "::error::${GITHUB_REF_NAME} is older than ${HIGHEST}. Moving ${MAJOR} to it would downgrade every @${MAJOR} consumer. Refusing."
+              exit 1
+            fi
+          fi
 
       - uses: actions/setup-node@v6
         with:
