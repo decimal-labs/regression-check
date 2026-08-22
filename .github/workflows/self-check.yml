@@ -1,0 +1,87 @@
+# Runs this Action against itself, so "it works" stops being an assumption.
+#
+# Until 2026-08-22 the comment-posting path — the Action's entire visible output —
+# had never executed against a real pull request anywhere, and no repository on
+# earth consumed it. Every doc and the Claude Code plugin point strangers at it.
+# The core path is now proven (a local run against the live API produced
+# verdict=high_risk, HIGH=2 MEDIUM=118 LOW=0 and a real regression-check id), but
+# a local run cannot exercise the one thing a user actually sees: the PR comment.
+# This workflow closes that gap and keeps it closed.
+#
+# It is deliberately non-blocking. The point is to observe the Action's own
+# behaviour, not to gate this repo's commits on a live external service — a
+# self-test that can wedge the repo when the API is down would get deleted.
+name: Self-check
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write   # the whole point: let it post its own comment
+
+jobs:
+  self-check:
+    name: Run this Action against a seeded agent
+    runs-on: ubuntu-latest
+    # Fork PRs cannot read secrets, so the step below would fail on a missing
+    # key rather than on anything meaningful. Skip rather than fail red.
+    if: github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build the bundle from source
+        # Test what this PR would ship, not what dist/ happened to contain.
+        run: |
+          npm ci
+          npm run build
+
+      - name: Is the key present?
+        id: gate
+        run: |
+          if [ -n "${{ secrets.DECIMAL_API_KEY }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::DECIMAL_API_KEY is not set — skipping. Add it in Settings → Secrets and variables → Actions to enable the self-check."
+          fi
+
+      - name: Resolve a candidate manifest
+        # A real consumer gets this from decimalai.flush_manifest_for_ci() in a
+        # prior step, which writes decimal_manifest_id to $GITHUB_OUTPUT. This
+        # repo has no agent to flush, so it resolves the seeded demo agent's
+        # newest manifest instead. Without it the Action stops with "No
+        # candidate-manifest-id provided or discoverable" — which is exactly how
+        # the scaffolded workflow failed on its first real PR (8aa7b08 in the
+        # plugin repo), so leaving it implicit here would re-stage that bug.
+        id: manifest
+        if: steps.gate.outputs.present == 'true'
+        env:
+          DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
+        run: |
+          set -euo pipefail
+          MID=$(curl -sf -H "Authorization: Bearer $DECIMAL_API_KEY" \
+                  https://api.decimal.ai/api/v1/manifests \
+                | python3 -c "import json,sys;d=json.load(sys.stdin);i=d if isinstance(d,list) else (d.get('items') or d.get('manifests') or []);c=[m for m in i if m.get('agent_name')=='[Demo] support-agent'];print(c[0]['id'] if c else '')")
+          if [ -z "$MID" ]; then
+            echo "::warning::no manifest found for the demo agent — skipping the check"
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=true" >> "$GITHUB_OUTPUT"
+            echo "id=$MID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Regression check against the seeded demo agent
+        if: steps.gate.outputs.present == 'true' && steps.manifest.outputs.found == 'true'
+        uses: ./
+        with:
+          api-key: ${{ secrets.DECIMAL_API_KEY }}
+          agent-name: '[Demo] support-agent'
+          candidate-manifest-id: ${{ steps.manifest.outputs.id }}
+          # Observe, never block. A red self-check on an unrelated PR teaches
+          # people to ignore this job, which is worse than not having it.
+          fail-on: none
+          on-error: warn
+          comment-mode: update
