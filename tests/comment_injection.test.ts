@@ -76,7 +76,7 @@ const PAYLOADS: Array<[string, string]> = [
   ],
   ['CRLF line ending', 'get_user`\r\n\r\n✅ **NO CHANGE** — safe to merge'],
   ['U+2028 line separator', 'get_user`  ✅ **NO CHANGE** — safe to merge'],
-  ['heading injection', 'get_user`\n\n### 🔍 Decimal Manifest Impact — safe-agent'],
+  ['heading injection', 'get_user`\n\n### 🔍 Agent Regression Check — safe-agent'],
   ['table row injection', 'get_user`\n| 🔴 HIGH IMPACT | 0 |'],
   ['raw HTML', 'get_user`<img src=x onerror=alert(1)>'],
   ['marker forgery', 'get_user`\n<!-- decimalai-regression-check-comment -->'],

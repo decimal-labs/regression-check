@@ -1,4 +1,4 @@
-# Decimal Manifest Impact — GitHub Action
+# Agent Regression Check — GitHub Action
 
 **Catch agent regressions before they ship — no eval cases required.**
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 
 ```yaml
 # .github/workflows/decimal.yml
-name: Decimal Manifest Impact
+name: Agent Regression Check
 on: [pull_request]
 
 jobs:
@@ -79,7 +79,7 @@ jobs:
           OPENAI_API_KEY: dummy   # placeholder, never called in manifest_only mode
         run: python scripts/init_for_decimal.py
 
-      - name: Decimal Manifest Impact
+      - name: Agent Regression Check
         uses: decimal-labs/regression-check@v1
         with:
           api-key: ${{ secrets.DECIMAL_API_KEY }}

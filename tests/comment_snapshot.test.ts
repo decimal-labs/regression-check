@@ -54,7 +54,7 @@ describe('full-markdown snapshots (one per verdict)', () => {
   it('high_risk: tool removed → 247 high-risk traces', () => {
     expect(formatComment(fixture(), BASE_URL)).toMatchInlineSnapshot(`
       "<!-- decimalai-regression-check-comment -->
-      ### 🔍 Decimal Manifest Impact — \`support-agent\`
+      ### 🔍 Agent Regression Check — \`support-agent\`
 
       **Manifest changes:**
       - 🔴 **Tool removed** — \`compare_competitors\`
@@ -71,7 +71,10 @@ describe('full-markdown snapshots (one per verdict)', () => {
 
       🔴 **HIGH IMPACT** — review before merging
 
-      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)"
+      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)
+
+      ---
+      _[Agent Regression Check](https://github.com/decimal-labs/regression-check) · [decimal.ai](https://decimal.ai)_"
     `);
   });
 
@@ -93,7 +96,7 @@ describe('full-markdown snapshots (one per verdict)', () => {
     );
     expect(md).toMatchInlineSnapshot(`
       "<!-- decimalai-regression-check-comment -->
-      ### 🔍 Decimal Manifest Impact — \`support-agent\`
+      ### 🔍 Agent Regression Check — \`support-agent\`
 
       **Manifest changes:**
       - 🟡 **Tool renamed** — \`search_v2\`
@@ -110,7 +113,10 @@ describe('full-markdown snapshots (one per verdict)', () => {
 
       🟡 **MEDIUM IMPACT** — review affected traces
 
-      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)"
+      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)
+
+      ---
+      _[Agent Regression Check](https://github.com/decimal-labs/regression-check) · [decimal.ai](https://decimal.ai)_"
     `);
   });
 
@@ -132,7 +138,7 @@ describe('full-markdown snapshots (one per verdict)', () => {
     );
     expect(md).toMatchInlineSnapshot(`
       "<!-- decimalai-regression-check-comment -->
-      ### 🔍 Decimal Manifest Impact — \`support-agent\`
+      ### 🔍 Agent Regression Check — \`support-agent\`
 
       **Manifest changes:**
       - 🟢 **Optional param added** — \`find_orders\`
@@ -149,7 +155,10 @@ describe('full-markdown snapshots (one per verdict)', () => {
 
       🟢 **LOW IMPACT** — likely safe to merge
 
-      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)"
+      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)
+
+      ---
+      _[Agent Regression Check](https://github.com/decimal-labs/regression-check) · [decimal.ai](https://decimal.ai)_"
     `);
   });
 
@@ -168,7 +177,7 @@ describe('full-markdown snapshots (one per verdict)', () => {
     );
     expect(md).toMatchInlineSnapshot(`
       "<!-- decimalai-regression-check-comment -->
-      ### 🔍 Decimal Manifest Impact — \`support-agent\`
+      ### 🔍 Agent Regression Check — \`support-agent\`
 
       **Impact on last 1,000 production traces:**
 
@@ -182,7 +191,10 @@ describe('full-markdown snapshots (one per verdict)', () => {
 
       ✅ **NO CHANGE** — safe to merge
 
-      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)"
+      [View full report →](https://app.decimal.ai/agents/support-agent/regression/rc_snapshot)
+
+      ---
+      _[Agent Regression Check](https://github.com/decimal-labs/regression-check) · [decimal.ai](https://decimal.ai)_"
     `);
   });
 
@@ -197,13 +209,16 @@ describe('full-markdown snapshots (one per verdict)', () => {
     );
     expect(md).toMatchInlineSnapshot(`
       "<!-- decimalai-regression-check-comment -->
-      ### 🔍 Decimal Manifest Impact — \`support-agent\`
+      ### 🔍 Agent Regression Check — \`support-agent\`
 
       ✓ **FIRST RUN** — baseline recorded
 
       First run for this agent. Baseline recorded.
 
-      _Future PRs will diff against this manifest._"
+      _Future PRs will diff against this manifest._
+
+      ---
+      _[Agent Regression Check](https://github.com/decimal-labs/regression-check) · [decimal.ai](https://decimal.ai)_"
     `);
   });
 });

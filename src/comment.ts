@@ -23,6 +23,23 @@ import { CommentMode } from './inputs';
 /** Hidden marker for finding our existing comment on update mode. */
 const MARKER = '<!-- decimalai-regression-check-comment -->';
 
+// Attribution, and a way home. This comment renders in other people's pull
+// requests, where the header was previously the only thing naming us and there
+// was no link at all — a reader had no route from the comment to what produced
+// it. Static text: nothing here is caller-influenced, so it cannot be injected
+// through. Points at the repo rather than the Marketplace listing, because the
+// repo resolves today and the listing slug does not exist yet.
+// Plain markdown, deliberately: comment_injection.test.ts asserts the rendered
+// body contains no raw HTML at all (/<[a-zA-Z!\/]/). A <sub> wrapper for small
+// text would trip that invariant, and the invariant is worth more than the type
+// size — it is what makes "we never emit HTML" checkable in one regex.
+const FOOTER = [
+  '',
+  '---',
+  '_[Agent Regression Check](https://github.com/decimal-labs/regression-check)' +
+    ' · [decimal.ai](https://decimal.ai)_',
+].join('\n');
+
 /**
  * Hardening for attacker-controlled text.
  *
@@ -289,7 +306,7 @@ export function formatComment(
 ): string {
   const lines: string[] = [];
   lines.push(MARKER);
-  lines.push(`### 🔍 Decimal Manifest Impact — \`${mdCode(report.agent_name)}\``);
+  lines.push(`### 🔍 Agent Regression Check — \`${mdCode(report.agent_name)}\``);
   lines.push('');
 
   // `human_summary` — the same one-line callout that appears on the
@@ -307,6 +324,7 @@ export function formatComment(
     lines.push(mdText(report.verdict_message, MAX_PROSE));
     lines.push('');
     lines.push(`_Future PRs will diff against this manifest._`);
+    lines.push(FOOTER);
     return lines.join('\n');
   }
 
@@ -356,6 +374,7 @@ export function formatComment(
     // header re-creates the self-contradiction this fix exists to remove.
     lines.push(...formatBehavioralNudge(report));
     lines.push(`[View full report →](${buildReportUrl(baseUrl, report.agent_name, report.id)})`);
+    lines.push(FOOTER);
     return lines.join('\n');
   }
 
@@ -544,6 +563,7 @@ export function formatComment(
   const reportUrl = buildReportUrl(baseUrl, report.agent_name, report.id);
   lines.push(`[View full report →](${reportUrl})`);
 
+  lines.push(FOOTER);
   return lines.join('\n');
 }
 
@@ -560,7 +580,7 @@ export function formatComment(
 export function formatUnavailableComment(agentName: string, reason: string): string {
   return [
     MARKER,
-    `### 🔍 Decimal Manifest Impact — \`${mdCode(agentName)}\``,
+    `### 🔍 Agent Regression Check — \`${mdCode(agentName)}\``,
     '',
     '⚠️ **CHECK DID NOT RUN** — impact unverified',
     '',
@@ -572,6 +592,7 @@ export function formatUnavailableComment(agentName: string, reason: string): str
     'This job was **not** failed (`on-error: warn`). Nothing about this pull ' +
       'request has been verified — treat it as unreviewed by Decimal, not as ' +
       'approved. Set `on-error: fail` to make availability problems blocking.',
+    FOOTER,
   ].join('\n');
 }
 

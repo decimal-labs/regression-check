@@ -127,7 +127,7 @@ async function main(): Promise<void> {
     // only a verdict the server actually returned may reach shouldFail(), so
     // `fail-on: none` stays advisory.
     if (isTransientApiFailure(e) && inputs.onError === 'warn') {
-      core.warning(`Impact check unavailable — ${reason}`);
+      core.warning(`Agent Regression Check unavailable — ${reason}`);
       // Outputs still get set so downstream steps branch on a real value
       // rather than an empty string.
       core.setOutput('verdict', 'unavailable');

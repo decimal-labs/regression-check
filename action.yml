@@ -1,4 +1,4 @@
-name: 'Decimal Manifest Impact'
+name: 'Agent Regression Check'
 description: 'Catch agent regressions before they ship — manifest-driven impact analysis on every PR. No eval cases required.'
 author: 'DecimalAI'
 

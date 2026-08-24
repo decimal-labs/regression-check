@@ -35801,6 +35801,22 @@ const github = __importStar(__nccwpck_require__(3228));
 const api_1 = __nccwpck_require__(6879);
 /** Hidden marker for finding our existing comment on update mode. */
 const MARKER = '<!-- decimalai-regression-check-comment -->';
+// Attribution, and a way home. This comment renders in other people's pull
+// requests, where the header was previously the only thing naming us and there
+// was no link at all — a reader had no route from the comment to what produced
+// it. Static text: nothing here is caller-influenced, so it cannot be injected
+// through. Points at the repo rather than the Marketplace listing, because the
+// repo resolves today and the listing slug does not exist yet.
+// Plain markdown, deliberately: comment_injection.test.ts asserts the rendered
+// body contains no raw HTML at all (/<[a-zA-Z!\/]/). A <sub> wrapper for small
+// text would trip that invariant, and the invariant is worth more than the type
+// size — it is what makes "we never emit HTML" checkable in one regex.
+const FOOTER = [
+    '',
+    '---',
+    '_[Agent Regression Check](https://github.com/decimal-labs/regression-check)' +
+        ' · [decimal.ai](https://decimal.ai)_',
+].join('\n');
 /**
  * Hardening for attacker-controlled text.
  *
@@ -36039,7 +36055,7 @@ function formatBehavioralNudge(report) {
 function formatComment(report, baseUrl, callReplay) {
     const lines = [];
     lines.push(MARKER);
-    lines.push(`### 🔍 Decimal Manifest Impact — \`${mdCode(report.agent_name)}\``);
+    lines.push(`### 🔍 Agent Regression Check — \`${mdCode(report.agent_name)}\``);
     lines.push('');
     // `human_summary` — the same one-line callout that appears on the
     // in-product ImpactReport — goes right under the heading. It's a plain-
@@ -36055,6 +36071,7 @@ function formatComment(report, baseUrl, callReplay) {
         lines.push(mdText(report.verdict_message, MAX_PROSE));
         lines.push('');
         lines.push(`_Future PRs will diff against this manifest._`);
+        lines.push(FOOTER);
         return lines.join('\n');
     }
     // Diff summary
@@ -36097,6 +36114,7 @@ function formatComment(report, baseUrl, callReplay) {
         // header re-creates the self-contradiction this fix exists to remove.
         lines.push(...formatBehavioralNudge(report));
         lines.push(`[View full report →](${(0, api_1.buildReportUrl)(baseUrl, report.agent_name, report.id)})`);
+        lines.push(FOOTER);
         return lines.join('\n');
     }
     lines.push(`**Impact on last ${fmt(total)} production trace${total === 1 ? '' : 's'}:**`);
@@ -36258,6 +36276,7 @@ function formatComment(report, baseUrl, callReplay) {
     // Report link
     const reportUrl = (0, api_1.buildReportUrl)(baseUrl, report.agent_name, report.id);
     lines.push(`[View full report →](${reportUrl})`);
+    lines.push(FOOTER);
     return lines.join('\n');
 }
 /**
@@ -36273,7 +36292,7 @@ function formatComment(report, baseUrl, callReplay) {
 function formatUnavailableComment(agentName, reason) {
     return [
         MARKER,
-        `### 🔍 Decimal Manifest Impact — \`${mdCode(agentName)}\``,
+        `### 🔍 Agent Regression Check — \`${mdCode(agentName)}\``,
         '',
         '⚠️ **CHECK DID NOT RUN** — impact unverified',
         '',
@@ -36285,6 +36304,7 @@ function formatUnavailableComment(agentName, reason) {
         'This job was **not** failed (`on-error: warn`). Nothing about this pull ' +
             'request has been verified — treat it as unreviewed by Decimal, not as ' +
             'approved. Set `on-error: fail` to make availability problems blocking.',
+        FOOTER,
     ].join('\n');
 }
 /**
@@ -36525,7 +36545,7 @@ async function main() {
         // only a verdict the server actually returned may reach shouldFail(), so
         // `fail-on: none` stays advisory.
         if ((0, api_1.isTransientApiFailure)(e) && inputs.onError === 'warn') {
-            core.warning(`Impact check unavailable — ${reason}`);
+            core.warning(`Agent Regression Check unavailable — ${reason}`);
             // Outputs still get set so downstream steps branch on a real value
             // rather than an empty string.
             core.setOutput('verdict', 'unavailable');
