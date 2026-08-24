@@ -20,9 +20,17 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
-import decimalai
-from demo_agent import build_agent
+# `python scripts/init_for_decimal.py` puts THIS file's directory on sys.path —
+# not the working directory — so `demo_agent`, a package at the repo root, is not
+# importable and the import below raises ModuleNotFoundError. Put the repo root on
+# the path explicitly so the script runs the same way from any cwd, including the
+# invocation this module's own docstring documents.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import decimalai  # noqa: E402  — must follow the sys.path fix above
+from demo_agent import build_agent  # noqa: E402
 
 
 def main() -> int:
