@@ -4,6 +4,16 @@ import * as path from 'path';
 import * as os from 'os';
 import { parseInputs, resolveCandidateManifestId } from '../src/inputs';
 
+// NOT 'k'. `parseInputs` calls the real `core.setSecret(apiKey)` — this file
+// deliberately does not mock @actions/core — and the runner then masks that
+// literal everywhere for the rest of the job. A one-character value made the
+// runner replace every "k" in the public log of this Marketplace Action:
+// `wor***/regression-chec***`, `api-***ey`, `1250***B  dist/index.js`. The log
+// a prospective adopter opens to judge whether this Action is maintained was
+// unreadable. Any fixture key here must be long and improbable.
+const MASKABLE_FIXTURE = 'not-a-real-credential-just-long-enough-to-mask';
+
+
 describe('resolveCandidateManifestId', () => {
   let tmpDir: string;
   let originalGhOut: string | undefined;
@@ -79,7 +89,7 @@ describe('parseInputs — behavioral-check', () => {
   }
 
   it('defaults to off', () => {
-    setInput('api-key', 'k');
+    setInput('api-key', MASKABLE_FIXTURE);
     setInput('agent-name', 'a');
     setInput('candidate-manifest-id', 'm');
     setInput('behavioral-check', '');
@@ -87,7 +97,7 @@ describe('parseInputs — behavioral-check', () => {
   });
 
   it('accepts mock / real', () => {
-    setInput('api-key', 'k');
+    setInput('api-key', MASKABLE_FIXTURE);
     setInput('agent-name', 'a');
     setInput('candidate-manifest-id', 'm');
     setInput('behavioral-check', 'real');
@@ -95,7 +105,7 @@ describe('parseInputs — behavioral-check', () => {
   });
 
   it('rejects an invalid value', () => {
-    setInput('api-key', 'k');
+    setInput('api-key', MASKABLE_FIXTURE);
     setInput('agent-name', 'a');
     setInput('candidate-manifest-id', 'm');
     setInput('behavioral-check', 'bogus');
@@ -133,7 +143,7 @@ describe('parseInputs — github-token', () => {
   }
 
   function setBaseInputs() {
-    setInput('api-key', 'k');
+    setInput('api-key', MASKABLE_FIXTURE);
     setInput('agent-name', 'a');
     setInput('candidate-manifest-id', 'm');
   }
