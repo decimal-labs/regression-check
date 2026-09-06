@@ -40,8 +40,15 @@ jobs:
 
       - name: Is the key present?
         id: gate
+        # Read the secret from the environment, never by interpolating it into
+        # the script body. A `${{ }}` expression is pasted into the shell text
+        # before bash ever sees it, so the value has to be shell-safe for the
+        # script to even parse. The env form carries no such requirement, and
+        # it is what the next step already does.
+        env:
+          DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
         run: |
-          if [ -n "${{ secrets.DECIMAL_API_KEY }}" ]; then
+          if [ -n "${DECIMAL_API_KEY}" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
             echo "present=false" >> "$GITHUB_OUTPUT"
@@ -56,17 +63,31 @@ jobs:
         # candidate-manifest-id provided or discoverable" — which is exactly how
         # the scaffolded workflow failed on its first real PR (8aa7b08 in the
         # plugin repo), so leaving it implicit here would re-stage that bug.
+        #
+        # This step NEVER fails the job. It used to: `curl -sf` under `set -e`
+        # exits non-zero on any 5xx, 429 or network error, so a DecimalAI blip
+        # reddened a run that has nothing to do with DecimalAI. The Action is
+        # careful about precisely that (`on-error: warn`); a hand-rolled
+        # prerequisite in front of it must not quietly undo the guarantee.
         id: manifest
         if: steps.gate.outputs.present == 'true'
         env:
           DECIMAL_API_KEY: ${{ secrets.DECIMAL_API_KEY }}
+          AGENT_NAME: '[Demo] support-agent'
         run: |
           set -euo pipefail
-          MID=$(curl -sf -H "Authorization: Bearer $DECIMAL_API_KEY" \
-                  https://api.decimal.ai/api/v1/manifests \
-                | python3 -c "import json,sys;d=json.load(sys.stdin);i=d if isinstance(d,list) else (d.get('items') or d.get('manifests') or []);c=[m for m in i if m.get('agent_name')=='[Demo] support-agent'];print(c[0]['id'] if c else '')")
+          # Filter server-side: the endpoint takes ?agent_name= and returns
+          # newest-first, so one row is exact. Paging the org and filtering here
+          # finds nothing once 20 newer manifests exist anywhere in it (20 is
+          # the endpoint's default limit) — and would report that as green.
+          RESP=$(curl -sf --max-time 30 --get \
+                   --data-urlencode "agent_name=${AGENT_NAME}" \
+                   --data-urlencode "limit=1" \
+                   -H "Authorization: Bearer ${DECIMAL_API_KEY}" \
+                   https://api.decimal.ai/api/v1/manifests) || RESP=''
+          MID=$(printf '%s' "$RESP" | python3 -c "import json,sys;raw=sys.stdin.read().strip();d=(json.loads(raw) if raw else {});i=d if isinstance(d,list) else (d.get('manifests') or d.get('items') or []);print(i[0]['id'] if i else '')" 2>/dev/null) || MID=''
           if [ -z "$MID" ]; then
-            echo "::warning::no manifest found for the demo agent — skipping the check"
+            echo "::warning::no manifest resolved for ${AGENT_NAME} — skipping the check. Either the API was unreachable or the demo agent has none. This is a skip, not a failure."
             echo "found=false" >> "$GITHUB_OUTPUT"
           else
             echo "found=true" >> "$GITHUB_OUTPUT"
