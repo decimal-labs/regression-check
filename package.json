@@ -40,6 +40,6 @@
     "vitest": "^4.1.9"
   },
   "overrides": {
-    "undici": "^6.28.0"
+    "undici": "^6.29.1"
   }
 }
