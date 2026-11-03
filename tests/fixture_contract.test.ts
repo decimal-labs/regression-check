@@ -67,3 +67,10 @@ describe('the fixture report', () => {
     expect(FIXTURE_BANNER).not.toMatch(/<[a-zA-Z!/]/);
   });
 });
+
+describe('the sample comment a stranger sees', () => {
+  it('names nothing internal', () => {
+    expect(JSON.stringify(raw)).not.toMatch(/\bCUJ\b/);
+  });
+});
+

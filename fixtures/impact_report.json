@@ -167,7 +167,7 @@
         "d49c18c6-183f-5372-9a45-9019799d0deb",
         "3c86b73f-49ff-590e-b2ae-ac942e87a1b6"
       ],
-      "explanation": "Model version bump (gpt-4o-mini-2024-07-18 → gpt-4o-mini-2024-09-12) — moderate. All 120 traces in the window will use the new model. Behavioral direction can't be predicted structurally — use post-deploy bisect (CUJ 11) to verify actual impact.",
+      "explanation": "Model version bump (gpt-4o-mini-2024-07-18 → gpt-4o-mini-2024-09-12) — moderate. All 120 traces in the window will use the new model. Behavioral direction can't be predicted structurally — use post-deploy bisect to verify actual impact.",
       "eval_breakdown": {
         "passing_affected": 15,
         "failing_affected": 5,
